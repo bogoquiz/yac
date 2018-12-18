@@ -1,106 +1,193 @@
 import React, { Component } from 'react';
+import { Button, Form, FormGroup, FormControl } from "react-bootstrap";
 import 'whatwg-fetch';
+
+import {
+  getFromStorage,
+  setInStorage,
+} from '../../utils/storage';
 
 class Home extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      counters: []
+      isLoading: true,
+      token: '',
+      signInError: '',
+      signInEmail: '',
+      signInPassword: ''
     };
 
-    this.newCounter = this.newCounter.bind(this);
-    this.incrementCounter = this.incrementCounter.bind(this);
-    this.decrementCounter = this.decrementCounter.bind(this);
-    this.deleteCounter = this.deleteCounter.bind(this);
-
-    this._modifyCounter = this._modifyCounter.bind(this);
+    this.onTextboxChangeSignInEmail = this.onTextboxChangeSignInEmail.bind(this);
+    this.onTextboxChangeSignInPassword = this.onTextboxChangeSignInPassword.bind(this);
+    
+    this.onSignIn = this.onSignIn.bind(this);
+    this.logout = this.logout.bind(this);
   }
 
+  
   componentDidMount() {
-    fetch('/api/counters')
-      .then(res => res.json())
-      .then(json => {
-        this.setState({
-          counters: json
+    const obj = getFromStorage('suyo');
+    if (obj && obj.token) {
+      const { token } = obj;
+
+      fetch('/api/account/verify?token=' + token)
+        .then(res => res.json())
+        .then(json => {
+          if (json.success) {
+            this.setState({
+              token,
+              isLoading: false
+            });
+          } else {
+            this.setState({
+              isLoading: false,
+            });
+          }
         });
-      });
-  }
-
-  newCounter() {
-    fetch('/api/counters', { method: 'POST' })
-      .then(res => res.json())
-      .then(json => {
-        let data = this.state.counters;
-        data.push(json);
-
-        this.setState({
-          counters: data
-        });
-      });
-  }
-
-  incrementCounter(index) {
-    const id = this.state.counters[index]._id;
-
-    fetch(`/api/counters/${id}/increment`, { method: 'PUT' })
-      .then(res => res.json())
-      .then(json => {
-        this._modifyCounter(index, json);
-      });
-  }
-
-  decrementCounter(index) {
-    const id = this.state.counters[index]._id;
-
-    fetch(`/api/counters/${id}/decrement`, { method: 'PUT' })
-      .then(res => res.json())
-      .then(json => {
-        this._modifyCounter(index, json);
-      });
-  }
-
-  deleteCounter(index) {
-    const id = this.state.counters[index]._id;
-
-    fetch(`/api/counters/${id}`, { method: 'DELETE' })
-      .then(_ => {
-        this._modifyCounter(index, null);
-      });
-  }
-
-  _modifyCounter(index, data) {
-    let prevData = this.state.counters;
-
-    if (data) {
-      prevData[index] = data;
     } else {
-      prevData.splice(index, 1);
+      this.setState({
+        isLoading: false,
+      });
     }
+  }
 
+
+  onTextboxChangeSignInEmail(event) {
     this.setState({
-      counters: prevData
+      signInEmail: event.target.value,
     });
   }
 
-  render() {
+  onTextboxChangeSignInPassword(event) {
+    this.setState({
+      signInPassword: event.target.value,
+    });
+  }
+
+
+  onSignIn() {
+
+    const {
+      signInEmail,
+      signInPassword,
+    } = this.state;
+
+    this.setState({
+      isLoading: true,
+    });
+    
+    fetch('/api/account/signin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: signInEmail,
+        password: signInPassword,
+      }),
+    }).then(res => res.json())
+      .then(json => {
+        console.log('json', json);
+        if (json.success) {
+          setInStorage('suyo', { token: json.token });
+          this.setState({
+            signInError: json.message,
+            isLoading: false,
+            signInPassword: '',
+            signInEmail: '',
+            token: json.token,
+          });
+        } else {
+          this.setState({
+            signInError: json.message,
+            isLoading: false,
+          });
+        }
+      });
+  }
+
+  logout() {
+    this.setState({
+      isLoading: true,
+    });
+    const obj = getFromStorage('suyo');
+    if (obj && obj.token) {
+      const { token } = obj;
+      // Verify token
+      fetch('/api/account/logout?token=' + token)
+        .then(res => res.json())
+        .then(json => {
+          if (json.success) {
+            this.setState({
+              token: '',
+              isLoading: false
+            });
+          } else {
+            this.setState({
+              isLoading: false,
+            });
+          }
+        });
+    } else {
+      this.setState({
+        isLoading: false,
+      });
+    }
+  }
+
+render() {
+    const {
+      isLoading,
+      token,
+      signInError,
+      signInEmail,
+      signInPassword,
+    } = this.state;
+
+    if (isLoading) {
+      return (<div><p>Loading...</p></div>);
+    }
+
+    if (!token) {
+      return (
+        <div className="Login">
+          <Form>
+            {
+              (signInError) ? (
+                <p>{signInError}</p>
+              ) : (null)
+            }
+            <Form.Label>Sign In</Form.Label>
+            <Form.Control
+              type="email"
+              placeholder="Email"
+              value={signInEmail}
+              onChange={this.onTextboxChangeSignInEmail}
+            />
+            <br />
+            <Form.Control
+              type="password"
+              placeholder="Password"
+              value={signInPassword}
+              onChange={this.onTextboxChangeSignInPassword}
+            />
+            <br />
+            <Button variant="primary" onClick={this.onSignIn}>Sign In</Button>
+          </Form>
+          <br />
+          <br />
+
+        </div>
+      );
+    }
+
     return (
-      <>
-        <p>Counters:</p>
-
-        <ul>
-          { this.state.counters.map((counter, i) => (
-            <li key={i}>
-              <span>{counter.count} </span>
-              <button onClick={() => this.incrementCounter(i)}>+</button>
-              <button onClick={() => this.decrementCounter(i)}>-</button>
-              <button onClick={() => this.deleteCounter(i)}>x</button>
-            </li>
-          )) }
-        </ul>
-
-        <button onClick={this.newCounter}>New counter</button>
-      </>
+      <div>
+        <Button onClick={this.logout}>Logout</Button>
+        <p>logeado</p>
+      </div>  
     );
   }
 }
