@@ -21,17 +21,24 @@ class Chat extends Component {
 		this.handleChange = this.handleChange.bind(this);
 		//this.listChat = this.listChat.bind(this);
 		socket.on('chat',(chatMessage) => {
-			const { room } = this.state;
-			room.push(chatMessage)		
-			this.setState({room: room.map(item => { return <ListGroupItem>
-									 							<b>{item.nick}</b> : <p>{item.message}</p> 
-									 						</ListGroupItem>	
+			//const { room } = this.state;
+			console.log('chatMessage',chatMessage)
+			if (chatMessage[0].nick !== 'Servidor'){	
+				this.setState({room: chatMessage.map(item => { return <ListGroupItem>
+										 							<b>{item.nickName}</b> : <p>{item.Message}</p> 
+										 						</ListGroupItem>	
 
-									 })			  
-			})
+										 })			  
+				})
+			} else { room.push(chatMessage)}	
 		})
 
 	}
+
+   componentWillMount() { 
+   		socket.emit('message', {nick: this.props.nick, message: 'se logeo al chat'});
+   }	
+   
 
    handleChange(e) {
 	    this.setState({ chatMessage: e.target.value });
@@ -40,7 +47,7 @@ class Chat extends Component {
 	sendSocketIO() {
 		const {chatMessage, room} = this.state;
 		console.log('hola email',this.props.nick)
-    	socket.emit('example_message', {nick: this.props.nick, message: chatMessage});	
+    	socket.emit('message', {nick: this.props.nick, message: chatMessage});	
     	this.setState({chatMessage: ''});	
 	}
 
@@ -60,7 +67,7 @@ class Chat extends Component {
   								</ListGroup>
     					</Col>
 					    <Col xs={6} md={4}>
-					      <p>usuarios</p>
+					      <p>hola! {this.props.nick}</p>
 					    </Col>	
 					 </Row>  
 					 <Row className="show-grid">
@@ -75,7 +82,7 @@ class Chat extends Component {
 						  </Form>  
     					</Col>
 					    <Col xs={6} md={2}>
-					      <Button onClick={this.sendSocketIO}>Send Socket.io</Button>
+					      <Button onClick={this.sendSocketIO}>Send</Button>
 					    </Col>					 	
 					 </Row> 				
     				</Container>
