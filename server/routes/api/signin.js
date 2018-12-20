@@ -9,6 +9,7 @@ module.exports = (app) => {
   app.post('/api/account/signup', (req, res, next) => {
     const { body } = req;
     const {
+      nickname,
       password
     } = body;
     let {
@@ -27,12 +28,22 @@ module.exports = (app) => {
         message: 'Error: password no puede estar vacio'
       });
     }
+    if (!nickname) {
+      return res.send({
+        success: false,
+        message: 'Error: nick no puede estar vacio'
+      });
+    }
 
     email = email.toLowerCase();
     email = email.trim();
 
     User.find({
-      email: email
+      "$or": [{
+        "email": email
+      }, {
+        "nickname": nickname
+      }]
     }, (err, previousUsers) => {
       if (err) {
         return res.send({
@@ -51,6 +62,7 @@ module.exports = (app) => {
 
       newUser.email = email;
       newUser.password = newUser.generateHash(password);
+      newUser.nickName = nickname;
       newUser.save((err, user) => {
         if (err) {
           return res.send({
@@ -128,6 +140,7 @@ module.exports = (app) => {
 
         return res.send({
           success: true,
+          nick: user.nickName,
           message: '',
           token: doc._id
         });
@@ -151,7 +164,6 @@ module.exports = (app) => {
       }
     }, null, (err, sessions) => {
       if (err) {
-        console.log(err);
         return res.send({
           success: false,
           message: 'Error: Server error'

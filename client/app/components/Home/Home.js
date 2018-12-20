@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 import { Button, Form, FormGroup, FormControl } from "react-bootstrap";
+import Chat from "../Chat/Chat"
 import 'whatwg-fetch';
+import Row from 'react-bootstrap/lib/Row';
+import Col from 'react-bootstrap/lib/Col';
 
 import {
   getFromStorage,
@@ -16,6 +19,7 @@ class Home extends Component {
       token: '',
       signInError: '',
       signInEmail: '',
+      signInNick: '',
       signInPassword: ''
     };
 
@@ -89,7 +93,6 @@ class Home extends Component {
       }),
     }).then(res => res.json())
       .then(json => {
-        console.log('json', json);
         if (json.success) {
           setInStorage('suyo', { token: json.token });
           this.setState({
@@ -97,6 +100,7 @@ class Home extends Component {
             isLoading: false,
             signInPassword: '',
             signInEmail: '',
+            signInNick: json.nick,
             token: json.token,
           });
         } else {
@@ -143,6 +147,7 @@ render() {
       token,
       signInError,
       signInEmail,
+      signInNick,
       signInPassword,
     } = this.state;
 
@@ -187,6 +192,7 @@ render() {
       <div>
         <Button onClick={this.logout}>Logout</Button>
         <p>logeado</p>
+        <Chat nick={signInNick} />
       </div>  
     );
   }

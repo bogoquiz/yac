@@ -11,12 +11,14 @@ class SignUp extends Component {
       isLoading: true,
       token: '',      
       signUpError: '',
+      signUpNickName: '',
       signUpEmail: '',
       signUpPassword: '',
     };
 
 	    this.onTextboxChangeSignUpEmail = this.onTextboxChangeSignUpEmail.bind(this);
 	    this.onTextboxChangeSignUpPassword = this.onTextboxChangeSignUpPassword.bind(this);
+	    this.onTextboxChangeSignUpNickName = this.onTextboxChangeSignUpNickName.bind(this);
 	    
 	    this.onSignUp = this.onSignUp.bind(this);
 	}
@@ -33,10 +35,17 @@ class SignUp extends Component {
     	});
   	}
 
+  	onTextboxChangeSignUpNickName(event) {
+    	this.setState({
+      		signUpNickName: event.target.value,
+    	});
+  	}
+
   	onSignUp() {
 	    const {
 	      signUpEmail,
 	      signUpPassword,
+	      signUpNickName
 	    } = this.state;
 
 	    this.setState({
@@ -51,6 +60,7 @@ class SignUp extends Component {
 	      body: JSON.stringify({
 	        email: signUpEmail,
 	        password: signUpPassword,
+	        nickname: signUpNickName
 	      }),
 	    }).then(res => res.json())
 	      .then(json => {
@@ -59,6 +69,7 @@ class SignUp extends Component {
 	          this.setState({
 	            signUpError: json.message,
 	            isLoading: false,
+	            signUpNickName: '',
 	            signUpEmail: '',
 	            signUpPassword: '',
 	          });
@@ -77,6 +88,7 @@ render() {
       isLoading,
       token,
       signUpEmail,
+      signUpNickName,
       signUpPassword,
       signUpError,
     } = this.state; 
@@ -92,6 +104,13 @@ render() {
 	              ) : (null)
 	            }
 	            <Form.Label>Sign Up</Form.Label>
+
+	            <Form.Control
+	              type="nickname"
+	              placeholder="NickName"
+	              value={signUpNickName}
+	              onChange={this.onTextboxChangeSignUpNickName}
+	            /><br />
 	            <Form.Control
 	              type="email"
 	              placeholder="Email"
